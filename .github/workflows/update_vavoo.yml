@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Repoya yazma izni verir
     steps:
       - uses: actions/checkout@v3
       
@@ -18,12 +20,17 @@ jobs:
       - name: Bağımlılıkları Yükle
         run: pip install requests
 
-      - name: İmzayı Güncelle ve Kaydet
+      - name: Verileri Güncelle ve Kaydet
         run: |
           python updater.py
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add signature.txt || echo "Değişiklik yok"
-          git commit -m "Vavoo imzası güncellendi" || echo "Commit edilecek bir şey yok"
-          git push
-          
+          # Dosyaları ekle (hata vermemesi için || true ekledik)
+          git add signature.txt playlist.m3u || true
+          # Eğer değişiklik varsa commit et ve pushla
+          if git diff --staged --quiet; then
+            echo "Değişiklik yok, işlem atlanıyor."
+          else
+            git commit -m "Playlist ve İmza Güncellendi: $(date)"
+            git push
+          fi
