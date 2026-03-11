@@ -1,0 +1,20 @@
+name: Vavoo Signature Updater
+on:
+  schedule:
+    - cron: '*/20 * * * *' # Her 20 dakikada bir çalıştır
+  workflow_dispatch: # Manuel çalıştırma izni
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Python Kur
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: İmzayı Güncelle
+        run: |
+          python updater.py
+          # Buraya dosyayı repoya geri push eden git komutlarını ekleyebiliriz
+          
