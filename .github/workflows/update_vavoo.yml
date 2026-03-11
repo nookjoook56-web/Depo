@@ -1,20 +1,29 @@
 name: Vavoo Signature Updater
 on:
   schedule:
-    - cron: '*/20 * * * *' # Her 20 dakikada bir çalıştır
-  workflow_dispatch: # Manuel çalıştırma izni
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      
       - name: Python Kur
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
-      - name: İmzayı Güncelle
+          python-version: '3.9'
+
+      - name: Bağımlılıkları Yükle
+        run: pip install requests
+
+      - name: İmzayı Güncelle ve Kaydet
         run: |
           python updater.py
-          # Buraya dosyayı repoya geri push eden git komutlarını ekleyebiliriz
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add signature.txt || echo "Değişiklik yok"
+          git commit -m "Vavoo imzası güncellendi" || echo "Commit edilecek bir şey yok"
+          git push
           
