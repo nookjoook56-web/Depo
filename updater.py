@@ -1,40 +1,36 @@
 import requests
-import json
 
-def get_vavoo_data():
+def run():
     headers = {"User-Agent": "VAVOO/2.6"}
-    # 1. Güncel İmzayı Al
-    config = requests.get("https://vavoo.to/config", headers=headers).json()
-    signature = config.get("signature")
     
-    # 2. Kanal Listesini Al (Örnek olarak Almanya/Türkiye listesi)
-    # Not: Vavoo API yapısına göre URL değişkenlik gösterebilir
-    channels_url = f"https://vavoo.to/channels?vexe=1&sig={signature}"
-    channels = requests.get(channels_url, headers=headers).json()
-    
-    return signature, channels
+    # 1. İmza Al
+    try:
+        config = requests.get("https://vavoo.to/config", headers=headers, timeout=10).json()
+        signature = config.get("signature")
+        if not signature: return
+    except: return
 
-def create_m3u(signature, channels):
+    # 2. Kanalları Al (Almanya/Türkiye karışık liste genelde buradadır)
+    try:
+        # Not: Bu URL Vavoo'nun güncel kanal listesi endpoint'idir
+        channels = requests.get(f"https://vavoo.to/channels?vexe=1&sig={signature}", headers=headers).json()
+    except: return
+
+    # 3. M3U Oluştur
     with open("playlist.m3u", "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n")
-        
         for ch in channels:
             name = ch.get("name", "Unknown")
-            # beIN Sports veya istediğin anahtar kelimeleri filtrele
-            if "BEIN" in name.upper() or "SPOR" in name.upper():
+            # Sadece SPOR ve BEIN kanallarını filtrele
+            if any(x in name.upper() for x in ["BEIN", "SPOR", "SPORT"]):
                 url = ch.get("url")
-                # Vavoo link yapısı: url + ?sig=...
-                final_url = f"{url}?sig={signature}"
-                
                 f.write(f'#EXTINF:-1 tvg-name="{name}" group-title="Spor", {name}\n')
-                f.write(f"{final_url}\n")
+                f.write(f"{url}?sig={signature}\n")
+    
+    # İmza dosyasını da yedekle
+    with open("signature.txt", "w") as f:
+        f.write(signature)
 
-# Çalıştır
-try:
-    sig, chans = get_vavoo_data()
-    create_m3u(sig, chans)
-    with open("signature.txt", "w") as f: f.write(sig)
-    print("Playlist ve İmza başarıyla güncellendi!")
-except Exception as e:
-    print(f"Hata: {e}")
+if __name__ == "__main__":
+    run()
     
